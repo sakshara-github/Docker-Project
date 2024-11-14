@@ -41,7 +41,7 @@ spec:
     - protocol: TCP
       port: 80  # External port for the Flask app
       targetPort: 8080  # Flask container's internal port
-      nodePort: 30080  # Specify the NodePort
+      nodePort: 30090 # Specify the NodePort
   type: NodePort  # Ensure the service type is NodePort
   
 ---
