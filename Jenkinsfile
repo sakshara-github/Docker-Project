@@ -13,7 +13,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout the code from GitHub or another source
-                git branch: 'sudha-docker', url: 'https://github.com/sudhakshara/Docker-Project.git'
+                git branch: 'sudha-docker', url: 'https://github.com/sakshara-github/Docker-Project.git'
             }
         }
 
