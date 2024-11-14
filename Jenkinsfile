@@ -1,59 +1,54 @@
 pipeline {
+    agent any
 
-  environment {
-    registry = "docker.io/cubensquare/flask"
-    registry_mysql = "docker.io/cubensquare/mysql"
-    dockerImage = ""
-  }
+    environment {
+        DOCKER_IMAGE = "sudhakshara/pythonflaskapp"
+        DOCKER_IMAGE_SQL = "sudhakshara/sqlapp"
+        DOCKER_TAG = "latest"
+        KUBECONFIG = '/home/sakshara479/.kube/config' 
+        DOCKER_CREDENTIALS = 'dockerhub'
+    }
 
-  agent any
     stages {
-  
-    stage('Checkout Source') {
-      steps {
-        git 'https://github.com/mgsgoms/Docker-Project.git'
-      }
-    }
-
-    stage('Build image') {
-      steps{
-        script {
-          dockerImage = docker.build registry + ":$BUILD_NUMBER"
+        stage('Checkout') {
+            steps {
+                // Checkout the code from GitHub or another source
+                git branch: 'sudha-docker', url: 'https://github.com/sudhakshara/Docker-Project.git'
+            }
         }
-      }
-    }
 
-    stage('Push Image') {
-      steps{
-        script {
-          docker.withRegistry( "" ) {
-            dockerImage.push()
-          }
+        stage('Build flask Image') {
+            steps {
+                script {
+                    // Build the Docker image
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                }
+            }
         }
-      }
-    }
-
-    stage('current') {
-      steps{
-        dir("${env.WORKSPACE}/mysql"){
-          sh "pwd"
-          }
-      }
-   }
-   stage('Build mysql image') {
-     steps{
-       sh 'docker build -t "docker.io/cubensquare/mysql:$BUILD_NUMBER"  "$WORKSPACE"/mysql'
-        sh 'docker push "docker.io/cubensquare/mysql:$BUILD_NUMBER"'
+        stage('Build SQL Image') {
+            steps {
+                script {
+                    // Build the Docker image for the SQL application from the 'sql' directory
+                    sh "docker build -t ${DOCKER_IMAGE_SQL}:${DOCKER_TAG} ./mysql"
+                }
+            }
         }
-      }
-    stage('Deploy App') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "frontend.yaml", kubeconfigId: "kube")
+        stage('Push to Dockerhub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS) {
+                        sh 'docker push ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                        sh 'docker push ${DOCKER_IMAGE_SQL}:${DOCKER_TAG}'
+                    }
+                }
+            }
         }
-      }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                        sh "kubectl apply -f frontend.yaml"
+                    }
+                }
+            }
     }
-
-  }
-
 }
